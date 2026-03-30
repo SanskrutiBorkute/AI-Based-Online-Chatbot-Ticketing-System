@@ -1,11 +1,14 @@
 # Project Title
 #  AI-Based Online Chatbot Ticketing System
 
-**Author(s):Sanskruti Borkute
+### Author
+Sanskruti Borkute
 ---
-**Affiliation:** Suryodaya college / RTMNU
+
+### Affiliation
+Computer engineering
 ----
-**Date:** 27/03/2026
+Date: 27/03/2026
 
 ---
 

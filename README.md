@@ -1,4 +1,4 @@
-# project Title
+# Project Title
 # 🎫 AI-Based Online Chatbot Ticketing System
 
 **Author(s):Sanskruti Borkute

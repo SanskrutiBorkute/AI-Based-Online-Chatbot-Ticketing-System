@@ -1,9 +1,9 @@
 const BASE = (function(){
   // Centralized API base; can be changed for different environments
   if (typeof window !== 'undefined') {
-    return window.__RAILAI_API_BASE__ || 'http://127.0.0.1:5000';
+    return window.__RAILAI_API_BASE__ || 'https://ai-based-online-chatbot-ticketing-system.onrender.com';
   }
-  return 'http://127.0.0.1:5000';
+  return 'https://ai-based-online-chatbot-ticketing-system.onrender.com';
 })();
 
 async function apiFetch(path, opts = {}){

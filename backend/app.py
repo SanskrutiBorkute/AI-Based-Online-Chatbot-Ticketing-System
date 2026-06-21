@@ -15,6 +15,12 @@ CORS(app)
 
 print("RAILAI APP LOADED")
 
+@app.route("/")
+def home():
+    return {
+        "message": "RailAI Backend Running Successfully"
+    }
+
 
 
 # Ensure DB is initialized

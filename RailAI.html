@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RailAI — Operations Centre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080D1A;
+    --surface: #0D1526;
+    --surface-high: #121E35;
+    --border: #1A2B47;
+    --border-light: #203454;
+    --text: #E8EDF5;
+    --text-muted: #6B82A0;
+    --text-dim: #3D5070;
+    --amber: #F59E0B;
+    --amber-dark: #B45309;
+    --green: #10B981;
+    --red: #EF4444;
+    --blue: #3B82F6;
+    --purple: #8B5CF6;
+  }
+
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: #F59E0B44; }
+
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes slideIn { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+  @keyframes trackMove { from { stroke-dashoffset:0; } to { stroke-dashoffset:-60; } }
+  @keyframes glow { 0%,100% { box-shadow:0 0 8px #F59E0B33; } 50% { box-shadow:0 0 24px #F59E0B66,0 0 48px #F59E0B22; } }
+  @keyframes typing { 0%,60%,100% { transform:translateY(0); } 30% { transform:translateY(-4px); } }
+
+  .fade-in { animation: fadeIn .4s ease forwards; }
+  .slide-in { animation: slideIn .3s ease forwards; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .card:hover { border-color: var(--border-light); }
+  .card-glow:hover { border-color: #F59E0B44; box-shadow: 0 0 24px #F59E0B11, inset 0 1px 0 #F59E0B22; }
+
+  .btn-primary {
+    background: linear-gradient(135deg,#F59E0B,#D97706);
+    color: #080D1A;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 16px #F59E0B44; }
+  .btn-primary:active { transform:translateY(0); }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn-ghost:hover { background: var(--surface-high); border-color: var(--border-light); color: var(--text); }
+
+  .btn-icon {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all .2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-icon:hover { background: var(--surface-high); border-color: var(--border-light); color: var(--text); }
+
+  .input-field {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color .2s;
+    width: 100%;
+  }
+  .input-field:focus { border-color: #F59E0B66; box-shadow: 0 0 0 3px #F59E0B11; }
+  .input-field::placeholder { color: var(--text-dim); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .02em;
+  }
+  .badge-open    { background:#10B98120; color:#10B981; border:1px solid #10B98140; }
+  .badge-pending { background:#F59E0B20; color:#F59E0B; border:1px solid #F59E0B40; }
+  .badge-closed  { background:#3D507040; color:#6B82A0; border:1px solid #3D507060; }
+  .badge-critical{ background:#EF444420; color:#EF4444; border:1px solid #EF444440; }
+  .badge-high    { background:#F9731620; color:#F97316; border:1px solid #F9731640; }
+  .badge-info    { background:#3B82F620; color:#3B82F6; border:1px solid #3B82F640; }
+
+  .track-line { stroke-dasharray:12 6; animation:trackMove 2s linear infinite; }
+
+  .typing-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--amber);
+    animation: typing 1.2s ease-in-out infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay:.2s; }
+  .typing-dot:nth-child(3) { animation-delay:.4s; }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .2s;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    position: relative;
+    border: 1px solid transparent;
+    user-select: none;
+  }
+  .nav-item:hover { background: var(--surface-high); color: var(--text); }
+  .nav-item.active { background: #F59E0B15; color: var(--amber); border-color: #F59E0B20; }
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: -1px; top: 50%;
+    transform: translateY(-50%);
+    width: 3px; height: 60%;
+    background: var(--amber);
+    border-radius: 2px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all .25s;
+    position: relative;
+    overflow: hidden;
+    flex: 1;
+    min-width: 140px;
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    filter: blur(30px);
+    opacity: .12;
+    transition: opacity .3s;
+  }
+  .stat-card:hover { border-color: var(--border-light); }
+  .stat-card:hover::after { opacity: .22; }
+  .stat-amber::after { background: #F59E0B; }
+  .stat-green::after { background: #10B981; }
+  .stat-red::after   { background: #EF4444; }
+  .stat-blue::after  { background: #3B82F6; }
+  .stat-purple::after{ background: #8B5CF6; }
+
+  .chat-bubble-user {
+    background: linear-gradient(135deg,#F59E0B22,#F59E0B11);
+    border: 1px solid #F59E0B33;
+    border-radius: 16px 16px 4px 16px;
+    padding: 12px 16px;
+    max-width: 80%;
+    align-self: flex-end;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .chat-bubble-ai {
+    background: var(--surface-high);
+    border: 1px solid var(--border);
+    border-radius: 16px 16px 16px 4px;
+    padding: 14px 16px;
+    max-width: 85%;
+    align-self: flex-start;
+    font-size: 13.5px;
+    line-height: 1.7;
+  }
+
+  .table-row { border-bottom: 1px solid #1A2B4760; transition: background .15s; }
+  .table-row:hover { background: #121E3560; }
+
+  .progress-bar { height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; transition: width .8s cubic-bezier(.4,0,.2,1); }
+
+  .mini-chart-bar { flex: 1; border-radius: 3px 3px 0 0; transition: height .5s cubic-bezier(.4,0,.2,1); cursor: pointer; }
+  .mini-chart-bar:hover { filter: brightness(1.3); }
+
+  select.input-field { appearance: none; cursor: pointer; }
+
+  /* Layout */
+  #app { display: flex; height: 100vh; overflow: hidden; background: var(--bg); }
+  #sidebar {
+    width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    transition: width .3s cubic-bezier(.4,0,.2,1);
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+  }
+  #sidebar.collapsed { width: 60px; }
+  #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  #topbar {
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 16px;
+    background: #0D1526cc;
+    backdrop-filter: blur(12px);
+    flex-shrink: 0;
+  }
+  #content { flex: 1; overflow: hidden; }
+  .page { display: none; height: 100%; }
+  .page.active { display: flex; flex-direction: column; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 1000;
+    background: #000000aa;
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    width: 520px; max-width: 90vw;
+    padding: 24px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  /* Toasts */
+  #toast-container {
+    position: fixed; bottom: 20px; right: 20px;
+    z-index: 2000;
+    display: flex; flex-direction: column; gap: 8px;
+    pointer-events: none;
+  }
+  .toast {
+    border-radius: 10px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 240px;
+    backdrop-filter: blur(12px);
+    animation: fadeIn .3s ease;
+    pointer-events: all;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <!-- Animated track decoration -->
+    <svg width="24" height="100%" viewBox="0 0 24 200" fill="none" style="position:absolute;left:0;top:0;height:100%;opacity:.3;pointer-events:none">
+      <line x1="8" y1="0" x2="8" y2="2000" stroke="#F59E0B" stroke-width="1" class="track-line" stroke-dasharray="10 8"/>
+      <line x1="16" y1="0" x2="16" y2="2000" stroke="#F59E0B" stroke-width="1" class="track-line" stroke-dasharray="10 8" style="animation-delay:1s"/>
+    </svg>
+
+    <!-- Logo -->
+    <div style="padding:18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+      <div style="width:32px;height:32px;border-radius:8px;flex-shrink:0;background:linear-gradient(135deg,#F59E0B,#D97706);display:flex;align-items:center;justify-content:center;animation:glow 3s ease-in-out infinite">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#080D1A" stroke="none"><path d="M12 2c-4 0-8 1.5-8 5v9a3 3 0 006 0v-1h4v1a3 3 0 006 0V7c0-3.5-4-5-8-5zM8 15H6v-2h2v2zm10 0h-2v-2h2v2zM4 10V7h16v3H4z"/></svg>
+      </div>
+      <div class="slide-in" id="logo-text">
+        <div style="font-weight:800;font-size:15px;letter-spacing:-.02em;color:var(--text)">RailAI</div>
+        <div style="font-size:10px;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase">Operations Centre</div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav style="flex:1;padding:12px 8px;display:flex;flex-direction:column;gap:2px">
+      <div class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 3l3-3 3 3m-3-3v6"/></svg>
+        <span class="nav-label">Dashboard</span>
+      </div>
+      <div class="nav-item" data-page="ai" onclick="navigate('ai')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 013 3v1h3a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h3V5a3 3 0 013-3zm-2 9a1 1 0 100 2 1 1 0 000-2zm4 0a1 1 0 100 2 1 1 0 000-2zm-2 3s-2 0-2 1.5h4c0-1.5-2-1.5-2-1.5z"/></svg>
+        <span class="nav-label">AI Assistant</span>
+      </div>
+      <div class="nav-item" data-page="tickets" onclick="navigate('tickets')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a2 2 0 012-2h16a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V9zm6 3h8M8 9v6"/></svg>
+        <span class="nav-label">Tickets</span>
+      </div>
+      <div class="nav-item" data-page="analytics" onclick="navigate('analytics')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 16l4-4 4 4 4-6"/></svg>
+        <span class="nav-label">Analytics</span>
+      </div>
+    </nav>
+
+    <!-- Bottom -->
+    <div style="padding:12px 8px;border-top:1px solid var(--border)">
+      <div class="nav-item">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 100-6 3 3 0 000 6zm9.7-3a9.8 9.8 0 00-.2-1.9l2.1-1.6-2-3.5-2.5 1a9.4 9.4 0 00-1.6-1l-.4-2.6h-4l-.4 2.6a9.4 9.4 0 00-1.6 1l-2.5-1-2 3.5 2.1 1.6a9.8 9.8 0 000 3.8l-2.1 1.6 2 3.5 2.5-1a9.4 9.4 0 001.6 1l.4 2.6h4l.4-2.6a9.4 9.4 0 001.6-1l2.5 1 2-3.5-2.1-1.6a9.8 9.8 0 00.2-1.9z"/></svg>
+        <span class="nav-label">Settings</span>
+      </div>
+      <div class="nav-item" style="margin-top:2px" onclick="toggleSidebar()" title="Toggle sidebar">
+        <svg id="collapse-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        <span class="nav-label">Collapse</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div id="main">
+    <!-- TOPBAR -->
+    <header id="topbar">
+      <div style="flex:1">
+        <h1 id="page-title" style="font-size:15px;font-weight:700;letter-spacing:-.01em">Operations Dashboard</h1>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;background:var(--surface-high);border-radius:8px;padding:6px 10px;border:1px solid var(--border)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+        <input placeholder="Search anything..." class="mono" style="background:none;border:none;outline:none;color:var(--text-muted);font-size:12px;width:160px" />
+      </div>
+      <span id="live-clock" class="mono" style="font-size:11px;color:var(--text-muted);letter-spacing:.05em"></span>
+      <div style="position:relative">
+        <button class="btn-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <span style="position:absolute;top:2px;right:2px;width:8px;height:8px;background:var(--red);border-radius:50%;border:2px solid var(--surface)"></span>
+        </button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding-left:8px;border-left:1px solid var(--border)">
+        <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#3B82F6,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">RA</div>
+        <div>
+          <div style="font-size:12px;font-weight:600">Rail Admin</div>
+          <div style="font-size:10px;color:var(--text-muted)">Ops Manager</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main id="content">
+
+      <!-- ══════════════ DASHBOARD PAGE ══════════════ -->
+      <div id="page-dashboard" class="page active" style="overflow-y:auto;padding:24px;gap:20px;flex-direction:column">
+        <!-- KPI Row -->
+        <div style="display:flex;gap:16px;flex-wrap:wrap" id="kpi-row">
+          <!-- filled by JS -->
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:16px">
+          <!-- Recent Tickets -->
+          <div class="card" style="padding:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+              <span style="font-weight:600;font-size:14px">Recent Ticket Activity</span>
+              <div style="display:flex;gap:8px">
+                <button class="btn-ghost" style="font-size:12px;padding:6px 12px">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                  Filter
+                </button>
+                <button class="btn-primary" style="font-size:12px;padding:6px 12px" onclick="navigate('tickets')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                  New Ticket
+                </button>
+              </div>
+            </div>
+            <div id="recent-tickets-body"></div>
+          </div>
+          <!-- Train Status -->
+          <div class="card" style="padding:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+              <span style="font-weight:600;font-size:14px">Live Train Status</span>
+              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;box-shadow:0 0 6px var(--green)"></span>
+            </div>
+            <div id="train-status-body" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+        </div>
+        <!-- Volume Chart -->
+        <div class="card" style="padding:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div>
+              <div style="font-weight:600;font-size:14px">Ticket Volume — Last 13 Days</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Across all categories and priority levels</div>
+            </div>
+            <button class="btn-ghost" style="font-size:12px;padding:6px 12px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Export
+            </button>
+          </div>
+          <div id="volume-chart" style="display:flex;gap:2px;align-items:flex-end;height:80px"></div>
+        </div>
+      </div>
+
+      <!-- ══════════════ AI ASSISTANT PAGE ══════════════ -->
+      <div id="page-ai" class="page" style="flex-direction:row;height:100%;overflow:hidden">
+        <!-- Chat -->
+        <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+          <!-- Chat header -->
+          <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0">
+            <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#F59E0B,#8B5CF6);display:flex;align-items:center;justify-content:center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M12 2a3 3 0 013 3v1h3a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h3V5a3 3 0 013-3zm-2 9a1 1 0 100 2 1 1 0 000-2zm4 0a1 1 0 100 2 1 1 0 000-2zm-2 3s-2 0-2 1.5h4c0-1.5-2-1.5-2-1.5z"/></svg>
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:14px">RailAI Assistant</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:2px">
+                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;box-shadow:0 0 6px var(--green)"></span>
+                <span style="font-size:11px;color:var(--green)">Online</span>
+                <span style="font-size:11px;color:var(--text-muted)" id="model-label">· claude-sonnet-4-6</span>
+              </div>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+              <select id="model-select" class="input-field" style="width:auto;font-size:11px;padding:4px 8px" onchange="document.getElementById('model-label').textContent='· '+this.value">
+                <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+                <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+              </select>
+              <button class="btn-icon" onclick="clearChat()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+              </button>
+            </div>
+          </div>
+          <!-- Messages -->
+          <div id="chat-messages" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px"></div>
+          <!-- Suggestions -->
+          <div id="chat-suggestions" style="padding:0 20px 12px;display:flex;flex-wrap:wrap;gap:8px"></div>
+          <!-- Input -->
+          <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;flex-shrink:0">
+            <textarea id="chat-input" class="input-field" placeholder="Ask RailAI anything about operations, tickets, train status..." rows="2" style="resize:none;line-height:1.6;padding:12px"></textarea>
+            <button id="send-btn" class="btn-primary" onclick="sendMessage()" style="padding:10px 16px;flex-shrink:0">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+              Send
+            </button>
+          </div>
+        </div>
+        <!-- Right panel -->
+        <div style="width:280px;border-left:1px solid var(--border);padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:20px;flex-shrink:0">
+          <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:12px;font-weight:600">AI Capabilities</div>
+            <div id="ai-capabilities"></div>
+          </div>
+          <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:12px;font-weight:600">Session Stats</div>
+            <div id="session-stats"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════ TICKETS PAGE ══════════════ -->
+      <div id="page-tickets" class="page" style="flex-direction:row;height:100%;overflow:hidden">
+        <!-- List -->
+        <div style="width:420px;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0">
+          <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;gap:8px">
+              <div style="flex:1;position:relative">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:10px;top:50%;transform:translateY(-50%)"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+                <input class="input-field" id="ticket-search" placeholder="Search tickets..." style="padding-left:32px;font-size:12px" oninput="filterTickets()" />
+              </div>
+              <button class="btn-primary" onclick="openNewTicket()" style="flex-shrink:0">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                New
+              </button>
+            </div>
+            <div id="status-filters" style="display:flex;gap:6px"></div>
+          </div>
+          <div id="ticket-list" style="flex:1;overflow-y:auto"></div>
+        </div>
+        <!-- Detail -->
+        <div id="ticket-detail" style="flex:1;overflow-y:auto;padding:24px">
+          <div style="height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--text-muted)">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a2 2 0 012-2h16a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V9zm6 3h8M8 9v6"/></svg>
+            <p style="font-size:14px">Select a ticket to view details</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════ ANALYTICS PAGE ══════════════ -->
+      <div id="page-analytics" class="page" style="overflow-y:auto;padding:24px;flex-direction:column;gap:20px">
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <h2 style="font-size:16px;font-weight:700">Operational Analytics</h2>
+            <p style="font-size:12px;color:var(--text-muted);margin-top:3px">Track performance, trends, and AI effectiveness across all railway support operations</p>
+          </div>
+          <div style="display:flex;gap:8px" id="period-btns"></div>
+        </div>
+        <!-- KPIs -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px" id="analytics-kpis"></div>
+        <!-- Charts row -->
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
+          <div class="card" style="padding:20px">
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px">Daily Ticket Volume vs Resolution Rate</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Bar = Volume · Line = Resolution %</div>
+            <div id="analytics-volume-chart" style="display:flex;gap:3px;height:100px;align-items:flex-end;margin-bottom:8px"></div>
+            <div style="display:flex;gap:3px;border-top:1px solid var(--border)">
+              <div style="flex:1;text-align:center;font-size:10px;color:var(--text-muted);padding-top:6px">Mon</div>
+              <div style="flex:1;text-align:center;font-size:10px;color:var(--text-muted);padding-top:6px">Tue</div>
+              <div style="flex:1;text-align:center;font-size:10px;color:var(--text-muted);padding-top:6px">Wed</div>
+              <div style="flex:1;text-align:center;font-size:10px;color:var(--text-muted);padding-top:6px">Thu</div>
+              <div style="flex:1;text-align:center;font-size:10px;color:var(--text-muted);padding-top:6px">Fri</div>
+              <div style="flex:1;text-align:center;font-size:10px;color:var(--text-muted);padding-top:6px">Sat</div>
+              <div style="flex:1;text-align:center;font-size:10px;color:var(--text-muted);padding-top:6px">Sun</div>
+            </div>
+          </div>
+          <div class="card" style="padding:20px">
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px">Ticket Categories</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">By issue type</div>
+            <div id="donut-container" style="display:flex;gap:16px;align-items:center"></div>
+          </div>
+        </div>
+        <!-- Routes + AI -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card" style="padding:20px">
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px">High-Volume Routes</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Routes with most support tickets</div>
+            <div id="top-routes"></div>
+          </div>
+          <div class="card" style="padding:20px">
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px">AI Assistant Performance</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Automated resolution metrics</div>
+            <div id="ai-metrics"></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- NEW TICKET MODAL -->
+<div class="modal-overlay" id="new-ticket-modal" onclick="closeNewTicket(event)">
+  <div class="card modal-box fade-in" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <span style="font-weight:600;font-size:15px">Create New Ticket</span>
+      <button class="btn-icon" onclick="closeNewTicket()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Ticket Type</label>
+        <input class="input-field" id="nt-type" placeholder="e.g. Delay Report, Refund Request" />
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Route</label>
+        <input class="input-field" id="nt-route" placeholder="e.g. Mumbai → Delhi" />
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Passenger Email</label>
+        <input class="input-field" id="nt-email" placeholder="passenger@email.com" />
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Priority</label>
+        <select class="input-field" id="nt-priority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">Description</label>
+        <textarea class="input-field" id="nt-desc" rows="3" placeholder="Describe the issue in detail..." style="resize:none"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px">
+        <button class="btn-ghost" onclick="closeNewTicket()">Cancel</button>
+        <button class="btn-primary" onclick="createTicket()">Create Ticket</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div id="toast-container"></div>
+
+<script>
+// ─── ICON PATHS ───────────────────────────────────────────────────────────────
+const ICONS = {
+  arrowUp: "M12 19V5M5 12l7-7 7 7",
+  arrowDown: "M12 5v14M5 12l7 7 7-7",
+  ticket: "M2 9a2 2 0 012-2h16a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V9zm6 3h8M8 9v6",
+  check: "M20 6L9 17l-5-5",
+  clock: "M12 22a10 10 0 100-20 10 10 0 000 20zm0-14v4l3 3",
+  bot: "M12 2a3 3 0 013 3v1h3a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h3V5a3 3 0 013-3zm-2 9a1 1 0 100 2 1 1 0 000-2zm4 0a1 1 0 100 2 1 1 0 000-2zm-2 3s-2 0-2 1.5h4c0-1.5-2-1.5-2-1.5z",
+  thumbsUp: "M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14zm-7 0H4.72A2.23 2.23 0 002.5 11.18L1 20.5A2 2 0 003 23H7V9z",
+  zap: "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
+  train: "M12 2c-4 0-8 1.5-8 5v9a3 3 0 006 0v-1h4v1a3 3 0 006 0V7c0-3.5-4-5-8-5zM8 15H6v-2h2v2zm10 0h-2v-2h2v2zM4 10V7h16v3H4z",
+  map: "M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z",
+  plus: "M12 5v14M5 12h14",
+  copy: "M8 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2M8 4a2 2 0 012-2h4a2 2 0 012 2M8 4h8",
+};
+
+function svgIcon(d, size=16, color='currentColor') {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+const pageTitles = { dashboard:'Operations Dashboard', ai:'AI Assistant', tickets:'Ticket Management', analytics:'Analytics & Insights' };
+let currentPage = 'dashboard';
+
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+  document.getElementById('page-title').textContent = pageTitles[page];
+  currentPage = page;
+}
+
+// ─── SIDEBAR COLLAPSE ────────────────────────────────────────────────────────
+let sidebarCollapsed = false;
+function toggleSidebar() {
+  sidebarCollapsed = !sidebarCollapsed;
+  const sidebar = document.getElementById('sidebar');
+  sidebar.classList.toggle('collapsed', sidebarCollapsed);
+  document.querySelectorAll('.nav-label').forEach(el => {
+    el.style.display = sidebarCollapsed ? 'none' : '';
+  });
+  document.getElementById('logo-text').style.display = sidebarCollapsed ? 'none' : '';
+  const icon = document.getElementById('collapse-icon');
+  icon.querySelector('path').setAttribute('d', sidebarCollapsed ? 'M9 18l6-6-6-6' : 'M3 12h18M3 6h18M3 18h18');
+}
+
+// ─── LIVE CLOCK ──────────────────────────────────────────────────────────────
+function updateClock() {
+  document.getElementById('live-clock').textContent =
+    new Date().toLocaleTimeString('en-IN', { hour12: false }) + ' IST';
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function addToast(type, message) {
+  const colors = { success: '#10B981', error: '#EF4444', info: '#F59E0B' };
+  const bg = type === 'success' ? '#10B98120' : type === 'error' ? '#EF444420' : '#F59E0B20';
+  const border = type === 'success' ? '#10B98140' : type === 'error' ? '#EF444440' : '#F59E0B40';
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.style.background = bg;
+  el.style.border = `1px solid ${border}`;
+  el.innerHTML = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${colors[type]};animation:pulse 2s infinite"></span>
+    <span style="font-size:13px;flex:1">${message}</span>
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;line-height:1">×</button>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// ─── SPARKLINE ───────────────────────────────────────────────────────────────
+function sparklineSVG(data, color, width=80, height=32) {
+  if (!data.length) return '';
+  const max = Math.max(...data), min = Math.min(...data);
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((v - min) / (max - min || 1)) * height;
+    return `${x},${y}`;
+  }).join(' ');
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+// ─── MINI BAR CHART ──────────────────────────────────────────────────────────
+function miniBarChart(container, data, color, height=80) {
+  const max = Math.max(...data, 1);
+  container.innerHTML = '';
+  container.style.height = height + 'px';
+  container.style.display = 'flex';
+  container.style.alignItems = 'flex-end';
+  container.style.gap = '2px';
+  data.forEach((v, i) => {
+    const bar = document.createElement('div');
+    bar.className = 'mini-chart-bar';
+    bar.style.height = `${(v / max) * 100}%`;
+    bar.style.background = i === data.length - 1 ? color : color + '88';
+    container.appendChild(bar);
+  });
+}
+
+// ─── DONUT CHART ─────────────────────────────────────────────────────────────
+function donutSVG(segments, size=110) {
+  const r = 36, cx = size/2, cy = size/2;
+  const circumference = 2 * Math.PI * r;
+  const total = segments.reduce((s, seg) => s + seg.value, 0);
+  let offset = 0;
+  let circles = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1A2B47" stroke-width="10"/>`;
+  segments.forEach(seg => {
+    const dash = (seg.value / total) * circumference;
+    circles += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="10" stroke-dasharray="${dash} ${circumference}" stroke-dashoffset="${-offset}" stroke-linecap="round"/>`;
+    offset += dash;
+  });
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="transform:rotate(-90deg)">${circles}</svg>`;
+}
+
+// ════════════════════════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════════════════════════
+const dashData = {
+  stats: {
+    openTickets: 142, openDelta: 8,
+    resolvedToday: 37, resolvedDelta: 12,
+    avgResolution: "2.4h", resDelta: -0.3,
+    aiHandled: 78, aiDelta: 4,
+    satisfaction: 94.2, satDelta: 1.8,
+    weeklyVolume: [45,62,58,74,89,71,82,95,88,103,92,115,109],
+    resolutionRate: [72,75,68,81,79,84,88],
+  },
+  recentActivity: [
+    { id:'TK-4821', type:'Delay Report', route:'Mumbai → Delhi', status:'open', priority:'high', age:'4m ago', train:'12952' },
+    { id:'TK-4820', type:'Refund Request', route:'Pune → Nagpur', status:'pending', priority:'medium', age:'12m ago', train:'11301' },
+    { id:'TK-4819', type:'Lost Luggage', route:'Chennai → Bengaluru', status:'open', priority:'critical', age:'28m ago', train:'12639' },
+    { id:'TK-4818', type:'Booking Issue', route:'Kolkata → Patna', status:'closed', priority:'low', age:'45m ago', train:'13007' },
+    { id:'TK-4817', type:'Catering Complaint', route:'Delhi → Jaipur', status:'closed', priority:'low', age:'1h ago', train:'12985' },
+  ],
+  trainStatus: [
+    { id:'12952', name:'Rajdhani Express', route:'MUM→DEL', status:'on-time', delay:0, occupancy:94 },
+    { id:'12301', name:'Howrah Rajdhani', route:'HWH→DEL', status:'delayed', delay:18, occupancy:87 },
+    { id:'12009', name:'Shatabdi Express', route:'MUM→AHM', status:'on-time', delay:0, occupancy:100 },
+    { id:'11057', name:'Amritsar Express', route:'CSTM→ASR', status:'delayed', delay:6, occupancy:76 },
+    { id:'12951', name:'Mumbai Rajdhani', route:'DEL→MUM', status:'on-time', delay:0, occupancy:89 },
+  ]
+};
+
+function colorForName(name) {
+  return { amber:'#F59E0B', green:'#10B981', red:'#EF4444', blue:'#3B82F6', purple:'#8B5CF6' }[name] || '#F59E0B';
+}
+
+function renderDashboard() {
+  const s = dashData.stats;
+  const kpiDefs = [
+    { label:'Open Tickets', value:s.openTickets, delta:s.openDelta, color:'amber', icon:ICONS.ticket, spark:s.weeklyVolume },
+    { label:'Resolved Today', value:s.resolvedToday, delta:s.resolvedDelta, color:'green', icon:ICONS.check, spark:s.resolutionRate },
+    { label:'Avg Resolution', value:s.avgResolution, delta:s.resDelta, color:'blue', icon:ICONS.clock },
+    { label:'AI Handled', value:`${s.aiHandled}%`, delta:s.aiDelta, color:'purple', icon:ICONS.bot },
+    { label:'Satisfaction', value:`${s.satisfaction}%`, delta:s.satDelta, color:'green', icon:ICONS.thumbsUp },
+  ];
+  const kpiRow = document.getElementById('kpi-row');
+  kpiRow.innerHTML = '';
+  kpiDefs.forEach(k => {
+    const c = colorForName(k.color);
+    const deltaSign = k.delta >= 0 ? '+' : '';
+    const deltaColor = k.delta >= 0 ? '#10B981' : '#EF4444';
+    const arrowIcon = k.delta >= 0 ? ICONS.arrowUp : ICONS.arrowDown;
+    const card = document.createElement('div');
+    card.className = `stat-card stat-${k.color}`;
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;font-weight:500">${k.label}</span>
+        <div style="width:32px;height:32px;border-radius:8px;background:${c}22;display:flex;align-items:center;justify-content:center;color:${c}">${svgIcon(k.icon, 16, c)}</div>
+      </div>
+      <div style="font-size:26px;font-weight:800;letter-spacing:-.03em;margin-bottom:8px">${k.value}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:11px;color:${deltaColor};display:flex;align-items:center;gap:3px">${svgIcon(arrowIcon,12,deltaColor)}${Math.abs(k.delta)}% vs yesterday</span>
+        ${k.spark ? sparklineSVG(k.spark, c) : ''}
+      </div>`;
+    kpiRow.appendChild(card);
+  });
+
+  // Recent tickets table
+  const tbody = document.getElementById('recent-tickets-body');
+  const priorityBadge = p => p==='critical'?'critical':p==='high'?'pending':p==='medium'?'info':'closed';
+  tbody.innerHTML = `<table style="width:100%;border-collapse:collapse">
+    <thead><tr style="border-bottom:1px solid var(--border)">
+      ${['ID','Type','Route','Train','Priority','Status','Age'].map(h=>`<th style="padding:6px 10px;text-align:left;font-size:11px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:.05em">${h}</th>`).join('')}
+    </tr></thead>
+    <tbody>
+    ${dashData.recentActivity.map(t=>`<tr class="table-row">
+      <td style="padding:10px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--amber)">${t.id}</td>
+      <td style="padding:10px;font-size:13px">${t.type}</td>
+      <td style="padding:10px;font-size:12px;color:var(--text-muted)">${t.route}</td>
+      <td style="padding:10px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-muted)">${t.train}</td>
+      <td style="padding:10px"><span class="badge badge-${priorityBadge(t.priority)}">${t.priority}</span></td>
+      <td style="padding:10px"><span class="badge badge-${t.status}">${t.status}</span></td>
+      <td style="padding:10px;font-size:11px;color:var(--text-muted)">${t.age}</td>
+    </tr>`).join('')}
+    </tbody></table>`;
+
+  // Train status
+  const trainBody = document.getElementById('train-status-body');
+  trainBody.innerHTML = dashData.trainStatus.map(t => {
+    const occColor = t.occupancy>95?'#EF4444':t.occupancy>80?'#F59E0B':'#10B981';
+    return `<div style="background:var(--surface-high);border-radius:10px;padding:12px;border:1px solid ${t.status==='delayed'?'#F59E0B44':'var(--border)'}">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <div><div style="font-size:12px;font-weight:600">${t.name}</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">${t.route}</div></div>
+        <div>${t.status==='delayed'?`<span style="font-size:11px;color:var(--amber);font-weight:600">+${t.delay}m</span>`:`<span style="font-size:11px;color:var(--green);font-weight:600">On Time</span>`}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${t.occupancy}%;background:${occColor}"></div></div>
+        <span style="font-size:10px;color:var(--text-muted);width:28px">${t.occupancy}%</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Volume chart
+  miniBarChart(document.getElementById('volume-chart'), s.weeklyVolume, '#F59E0B', 80);
+}
+
+// ════════════════════════════════════════════════════════════
+// AI ASSISTANT
+// ════════════════════════════════════════════════════════════
+let chatMessages = [{
+  role: 'assistant',
+  content: "Hello! I'm <strong>RailAI</strong>, your intelligent railway operations assistant. I can help you with ticket management, train schedules, passenger queries, delay analysis, and operational insights.\n\nWhat can I assist you with today?",
+  time: new Date()
+}];
+let chatLoading = false;
+
+const SYSTEM_PROMPT = `You are RailAI, an expert AI assistant for Indian Railways operations management. You help railway operations staff with:
+- Analyzing and managing passenger support tickets
+- Providing insights on train delays, cancellations, and disruptions
+- Guiding staff through refund and compensation procedures
+- Answering queries about railway rules, policies, and procedures
+- Suggesting operational improvements based on ticket patterns
+- Handling lost luggage, catering complaints, and booking issues
+
+Be professional, concise, and helpful. Use railway terminology appropriately. Format responses clearly with bullet points where helpful.`;
+
+const suggestions = [
+  "Show me open critical tickets for today",
+  "What's the refund policy for cancelled trains?",
+  "Analyze delay patterns on Mumbai–Delhi route",
+  "How to handle lost luggage complaints?",
+];
+
+function renderAICapabilities() {
+  const caps = [
+    { icon:ICONS.ticket, label:'Ticket Analysis', desc:'Classify & prioritize tickets', color:'#F59E0B' },
+    { icon:ICONS.train, label:'Schedule Insights', desc:'Delay patterns & predictions', color:'#3B82F6' },
+    { icon:ICONS.map, label:'Route Intelligence', desc:'Route-wise issue mapping', color:'#10B981' },
+    { icon:ICONS.zap, label:'Auto-Resolution', desc:'AI-suggested solutions', color:'#8B5CF6' },
+  ];
+  document.getElementById('ai-capabilities').innerHTML = caps.map(c => `
+    <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="width:28px;height:28px;border-radius:8px;background:${c.color}22;display:flex;align-items:center;justify-content:center;flex-shrink:0">${svgIcon(c.icon,14,c.color)}</div>
+      <div><div style="font-size:12px;font-weight:600">${c.label}</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">${c.desc}</div></div>
+    </div>`).join('');
+}
+
+function updateSessionStats() {
+  const aiCount = chatMessages.filter(m => m.role==='assistant').length - 1;
+  document.getElementById('session-stats').innerHTML = [
+    { label:'Messages', value: chatMessages.length },
+    { label:'Queries handled', value: Math.max(0, aiCount) },
+    { label:'Model', value:'Sonnet 4.6' },
+  ].map(s => `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1A2B4740">
+    <span style="font-size:12px;color:var(--text-muted)">${s.label}</span>
+    <span style="font-size:12px;font-weight:600">${s.value}</span>
+  </div>`).join('');
+}
+
+function renderChatMessages() {
+  const container = document.getElementById('chat-messages');
+  container.innerHTML = chatMessages.map((msg, i) => {
+    const isUser = msg.role === 'user';
+    const timeStr = msg.time ? msg.time.toLocaleTimeString() : '';
+    if (isUser) {
+      return `<div class="fade-in" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <div class="chat-bubble-user">${msg.content.replace(/\n/g,'<br>')}</div>
+        <span style="font-size:10px;color:var(--text-dim);margin-right:4px">${timeStr}</span>
+      </div>`;
+    } else {
+      const formatted = msg.content.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+      return `<div class="fade-in" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px">
+        <div style="display:flex;align-items:center;gap:6px;margin-left:4px">
+          <div style="width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,#F59E0B,#8B5CF6);display:flex;align-items:center;justify-content:center">${svgIcon(ICONS.zap,11,'#fff')}</div>
+          <span style="font-size:11px;color:var(--text-muted)">RailAI</span>
+          <span style="font-size:10px;color:var(--text-dim)">${timeStr}</span>
+        </div>
+        <div class="chat-bubble-ai">${formatted}</div>
+      </div>`;
+    }
+  }).join('');
+
+  if (chatLoading) {
+    container.innerHTML += `<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px">
+      <div style="display:flex;align-items:center;gap:6px;margin-left:4px">
+        <div style="width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,#F59E0B,#8B5CF6)"></div>
+        <span style="font-size:11px;color:var(--text-muted)">RailAI is thinking...</span>
+      </div>
+      <div class="chat-bubble-ai" style="display:flex;align-items:center;gap:6px">
+        <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+      </div>
+    </div>`;
+  }
+  container.scrollTop = container.scrollHeight;
+
+  // Suggestions
+  const sugg = document.getElementById('chat-suggestions');
+  if (chatMessages.length <= 1 && !chatLoading) {
+    sugg.innerHTML = suggestions.map(s => `<button onclick="setInput(this)" data-text="${s}" style="background:var(--surface-high);border:1px solid var(--border);border-radius:20px;padding:6px 14px;color:var(--text-muted);font-size:12px;cursor:pointer;transition:all .2s;font-family:Inter,sans-serif"
+      onmouseover="this.style.borderColor='#F59E0B66';this.style.color='var(--text)'"
+      onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">${s}</button>`).join('');
+  } else {
+    sugg.innerHTML = '';
+  }
+  updateSessionStats();
+}
+
+function setInput(btn) {
+  document.getElementById('chat-input').value = btn.dataset.text;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || chatLoading) return;
+  input.value = '';
+  chatMessages.push({ role:'user', content:text, time:new Date() });
+  chatLoading = true;
+  document.getElementById('send-btn').disabled = true;
+  renderChatMessages();
+
+  try {
+    const model = document.getElementById('model-select').value;
+    const history = chatMessages.map(m => ({ role:m.role, content:m.content }));
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model, max_tokens:1000, system:SYSTEM_PROMPT, messages:history }),
+    });
+    const data = await response.json();
+    const reply = data.content?.map(b => b.text).join('') || "I'm having trouble processing that. Please try again.";
+    chatMessages.push({ role:'assistant', content:reply, time:new Date() });
+  } catch(err) {
+    chatMessages.push({ role:'assistant', content:"⚠️ Connection error. Please check your network and try again.", time:new Date() });
+    addToast('error', 'Failed to reach AI service');
+  }
+  chatLoading = false;
+  document.getElementById('send-btn').disabled = false;
+  renderChatMessages();
+}
+
+function clearChat() {
+  chatMessages = [chatMessages[0]];
+  renderChatMessages();
+  addToast('success', 'Conversation cleared');
+}
+
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+// ════════════════════════════════════════════════════════════
+// TICKETS
+// ════════════════════════════════════════════════════════════
+const allTickets = [
+  { id:'TK-4821', type:'Delay Report', route:'Mumbai → Delhi', train:'12952 Rajdhani', status:'open', priority:'critical', age:'4m', passenger:'Priya Sharma', email:'p.sharma@email.com', pnr:'8301245678', description:'Train delayed by over 3 hours at Bhopal junction with no communication. Passenger missed connecting flight.', aiSuggestion:'Escalate to Operations Manager. Initiate compensation protocol for delays > 3 hrs. Provide meal vouchers.', assignee:'Unassigned', createdAt:'2024-01-17 09:14', tags:['delay','compensation'], replies:0 },
+  { id:'TK-4820', type:'Refund Request', route:'Pune → Nagpur', train:'11301 Udyan', status:'pending', priority:'medium', age:'12m', passenger:'Rahul Patil', email:'r.patil@email.com', pnr:'7401234890', description:'Ticket cancelled 36 hours before departure. Refund not credited after 7 working days.', aiSuggestion:'Standard refund timeline is 7-10 days. Check payment gateway status. Escalate if payment was via credit card.', assignee:'Agent A. Kumar', createdAt:'2024-01-17 09:06', tags:['refund','billing'], replies:2 },
+  { id:'TK-4819', type:'Lost Luggage', route:'Chennai → Bengaluru', train:'12639 Brindavan', status:'open', priority:'high', age:'28m', passenger:'Anita Menon', email:'a.menon@email.com', pnr:'9201876543', description:'Suitcase (black, Samsonite, 24") with important documents not found at Bengaluru Cantonment station.', aiSuggestion:'File GR (Goods Received) at destination. Contact parcel office at Chennai Central. Initiate baggage trace via PRS.', assignee:'Agent S. Reddy', createdAt:'2024-01-17 08:50', tags:['luggage','urgent'], replies:1 },
+  { id:'TK-4818', type:'Booking Issue', route:'Kolkata → Patna', train:'13007 Udal Express', status:'closed', priority:'low', age:'45m', passenger:'Suresh Das', email:'s.das@email.com', pnr:'6102345678', description:'Unable to upgrade to 1A from 2A using UTS app. Payment deducted but seat not confirmed.', aiSuggestion:'Check reservation chart. Verify payment status on PG dashboard. Issue manual confirmation if payment confirmed.', assignee:'Agent M. Singh', createdAt:'2024-01-17 08:33', tags:['booking','app'], replies:4 },
+  { id:'TK-4817', type:'Catering Complaint', route:'Delhi → Jaipur', train:'12985 Shatabdi', status:'closed', priority:'low', age:'1h', passenger:'Kavita Joshi', email:'k.joshi@email.com', pnr:'5401298765', description:'Cold food served during meal time. Pantry car staff was rude when complained. Requesting refund for meal charges.', aiSuggestion:'Issue formal apology and meal voucher. Forward complaint to catering supervisor for the train run on this date.', assignee:'Agent P. Verma', createdAt:'2024-01-17 08:18', tags:['catering','conduct'], replies:3 },
+  { id:'TK-4816', type:'AC Malfunction', route:'Hyderabad → Mumbai', train:'12701 Hussainsagar', status:'open', priority:'high', age:'1h 20m', passenger:'Vikram Reddy', email:'v.reddy@email.com', pnr:'4301567890', description:'AC not working in coach B5 since Pune. Multiple passengers affected. Temperature is very high.', aiSuggestion:'Alert TTE and engineering team immediately. Document affected passengers. Process partial fare refund per IRCTC policy.', assignee:'Unassigned', createdAt:'2024-01-17 07:58', tags:['ac','amenity','urgent'], replies:0 },
+];
+
+let ticketFilter = { status:'all', search:'' };
+let selectedTicket = null;
+
+function priorityColor(p) {
+  return p==='critical'?'#EF4444':p==='high'?'#F97316':p==='medium'?'#F59E0B':'#6B82A0';
+}
+
+function renderStatusFilters() {
+  document.getElementById('status-filters').innerHTML = ['all','open','pending','closed'].map(s => `
+    <button onclick="setStatusFilter('${s}')" id="sf-${s}" style="padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;
+      background:${ticketFilter.status===s?'#F59E0B22':'transparent'};
+      color:${ticketFilter.status===s?'var(--amber)':'var(--text-muted)'};
+      border:1px solid ${ticketFilter.status===s?'#F59E0B44':'var(--border)'};
+      font-family:Inter,sans-serif;font-weight:500">
+      ${s.charAt(0).toUpperCase()+s.slice(1)}
+    </button>`).join('');
+}
+
+function setStatusFilter(s) {
+  ticketFilter.status = s;
+  filterTickets();
+  renderStatusFilters();
+}
+
+function filterTickets() {
+  ticketFilter.search = document.getElementById('ticket-search').value;
+  const filtered = allTickets.filter(t => {
+    if (ticketFilter.status !== 'all' && t.status !== ticketFilter.status) return false;
+    if (ticketFilter.search && !t.id.toLowerCase().includes(ticketFilter.search.toLowerCase())
+      && !t.type.toLowerCase().includes(ticketFilter.search.toLowerCase())
+      && !t.passenger.toLowerCase().includes(ticketFilter.search.toLowerCase())) return false;
+    return true;
+  });
+  renderTicketList(filtered);
+}
+
+function renderTicketList(tickets) {
+  document.getElementById('ticket-list').innerHTML = tickets.map(t => `
+    <div onclick="selectTicket('${t.id}')" style="padding:14px 16px;cursor:pointer;border-bottom:1px solid #1A2B4740;
+      background:${selectedTicket?.id===t.id?'var(--surface-high)':'transparent'};
+      border-left:3px solid ${selectedTicket?.id===t.id?'var(--amber)':'transparent'};transition:all .15s">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--amber)">${t.id}</span>
+          <span class="badge badge-${t.status}">${t.status}</span>
+        </div>
+        <span style="font-size:10px;color:var(--text-muted)">${t.age}</span>
+      </div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:3px">${t.type}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">${t.passenger} · ${t.route}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;gap:4px">
+          ${t.tags.slice(0,2).map(tag=>`<span style="font-size:10px;background:var(--surface-high);color:var(--text-muted);padding:2px 7px;border-radius:10px;border:1px solid var(--border)">#${tag}</span>`).join('')}
+        </div>
+        <div style="width:8px;height:8px;border-radius:50%;background:${priorityColor(t.priority)}"></div>
+      </div>
+    </div>`).join('');
+}
+
+function selectTicket(id) {
+  selectedTicket = allTickets.find(t => t.id === id);
+  filterTickets();
+  renderTicketDetail();
+}
+
+function renderTicketDetail() {
+  const t = selectedTicket;
+  if (!t) return;
+  const priorityBadge = p => p==='critical'?'critical':p==='high'?'pending':'info';
+  document.getElementById('ticket-detail').innerHTML = `
+    <div class="fade-in">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--amber)">${t.id}</span>
+            <span class="badge badge-${t.status}">${t.status}</span>
+            <span class="badge badge-${priorityBadge(t.priority)}">${t.priority}</span>
+          </div>
+          <h2 style="font-size:18px;font-weight:700">${t.type}</h2>
+          <p style="font-size:13px;color:var(--text-muted);margin-top:4px">${t.route} · ${t.train}</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-ghost" style="font-size:12px" onclick="navigator.clipboard.writeText('${t.id}');addToast('success','Ticket ID copied')">${svgIcon(ICONS.copy,13)} Copy ID</button>
+          <button class="btn-primary" style="font-size:12px" onclick="addToast('success','Ticket marked as resolved')">${svgIcon(ICONS.check,13)} Resolve</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        ${[
+          {label:'Passenger', value:t.passenger},
+          {label:'Email', value:t.email},
+          {label:'PNR Number', value:t.pnr, mono:true},
+          {label:'Assignee', value:t.assignee},
+          {label:'Created', value:t.createdAt},
+          {label:'Replies', value:t.replies},
+        ].map(f=>`<div class="card" style="padding:12px">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:4px">${f.label}</div>
+          <div style="font-size:13px;font-weight:500;font-family:${f.mono?'JetBrains Mono,monospace':'Inter,sans-serif'}">${f.value}</div>
+        </div>`).join('')}
+      </div>
+      <div class="card" style="padding:16px;margin-bottom:16px">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px">Issue Description</div>
+        <p style="font-size:13px;line-height:1.7">${t.description}</p>
+      </div>
+      <div style="background:linear-gradient(135deg,#F59E0B08,#8B5CF608);border:1px solid #F59E0B33;border-radius:12px;padding:16px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="width:24px;height:24px;border-radius:8px;background:linear-gradient(135deg,#F59E0B,#8B5CF6);display:flex;align-items:center;justify-content:center">${svgIcon(ICONS.zap,13,'#fff')}</div>
+          <span style="font-size:12px;font-weight:600;color:var(--amber)">AI Recommendation</span>
+          <span class="badge badge-info" style="font-size:10px">Auto-generated</span>
+        </div>
+        <p style="font-size:13px;line-height:1.7">${t.aiSuggestion}</p>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${t.tags.map(tag=>`<span style="background:var(--surface-high);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--text-muted)">#${tag}</span>`).join('')}
+        <button class="btn-ghost" style="font-size:12px;border-radius:20px;padding:4px 12px">${svgIcon(ICONS.plus,12)} Add tag</button>
+      </div>
+    </div>`;
+}
+
+function openNewTicket() { document.getElementById('new-ticket-modal').classList.add('open'); }
+function closeNewTicket(e) {
+  if (!e || e.target === document.getElementById('new-ticket-modal')) {
+    document.getElementById('new-ticket-modal').classList.remove('open');
+  }
+}
+function createTicket() {
+  document.getElementById('new-ticket-modal').classList.remove('open');
+  addToast('success', 'Ticket created successfully');
+}
+
+// ════════════════════════════════════════════════════════════
+// ANALYTICS
+// ════════════════════════════════════════════════════════════
+let analyticsPeriod = '7d';
+const analyticsData = {
+  volumeByType: [
+    { label:'Delay Reports', value:38, color:'#F59E0B' },
+    { label:'Refund Requests', value:27, color:'#3B82F6' },
+    { label:'Lost Luggage', value:14, color:'#EF4444' },
+    { label:'Booking Issues', value:12, color:'#8B5CF6' },
+    { label:'Catering', value:9, color:'#10B981' },
+  ],
+  resolutionByDay: [82,78,85,91,88,84,93],
+  volumeByDay: [112,98,134,89,145,121,138],
+  topRoutes: [
+    { route:'Mumbai → Delhi', tickets:48, trend:+12, satisfaction:82 },
+    { route:'Chennai → Bengaluru', tickets:34, trend:-3, satisfaction:91 },
+    { route:'Kolkata → Patna', tickets:29, trend:+5, satisfaction:76 },
+    { route:'Delhi → Jaipur', tickets:22, trend:-8, satisfaction:94 },
+    { route:'Hyderabad → Mumbai', tickets:19, trend:+2, satisfaction:88 },
+  ],
+  aiMetrics: { handled:78, accuracy:94.2, avgResponseTime:'1.8s', escalationRate:8.3 },
+  kpis: [
+    { label:'First Contact Resolution', value:'67%', delta:+4, good:true },
+    { label:'Avg Handle Time', value:'14.2m', delta:-2, good:true },
+    { label:'Backlog Growth', value:'3.2%', delta:+1, good:false },
+    { label:'SLA Breach Rate', value:'4.1%', delta:-0.8, good:true },
+  ],
+};
+
+function renderAnalytics() {
+  const d = analyticsData;
+  const totalVolume = d.volumeByType.reduce((s,v)=>s+v.value,0);
+
+  // Period buttons
+  document.getElementById('period-btns').innerHTML = ['24h','7d','30d','90d'].map(p => `
+    <button onclick="setAnalyticsPeriod('${p}')" style="padding:6px 12px;border-radius:7px;font-size:12px;cursor:pointer;
+      background:${analyticsPeriod===p?'#F59E0B22':'transparent'};
+      color:${analyticsPeriod===p?'var(--amber)':'var(--text-muted)'};
+      border:1px solid ${analyticsPeriod===p?'#F59E0B44':'var(--border)'};
+      font-family:Inter,sans-serif;font-weight:500;transition:all .15s">${p}</button>`).join('') +
+    `<button class="btn-ghost" style="font-size:12px">${svgIcon('M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3',13)} Export</button>`;
+
+  // KPIs
+  document.getElementById('analytics-kpis').innerHTML = d.kpis.map(k => `
+    <div class="stat-card" style="padding:16px">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">${k.label}</div>
+      <div style="font-size:22px;font-weight:800">${k.value}</div>
+      <div style="font-size:11px;margin-top:6px;color:${k.good?'var(--green)':'var(--red)'};display:flex;align-items:center;gap:4px">
+        ${svgIcon(k.good?ICONS.arrowUp:ICONS.arrowDown,11,k.good?'#10B981':'#EF4444')}
+        ${Math.abs(k.delta)}% this period
+      </div>
+    </div>`).join('');
+
+  // Volume bars
+  const volChart = document.getElementById('analytics-volume-chart');
+  const maxV = Math.max(...d.volumeByDay);
+  volChart.innerHTML = d.volumeByDay.map(v => `
+    <div style="flex:1;border-radius:4px 4px 0 0;height:${(v/maxV)*85}%;background:linear-gradient(180deg,#F59E0Bcc,#F59E0B55)"></div>`).join('');
+
+  // Donut
+  const donut = document.getElementById('donut-container');
+  donut.innerHTML = `
+    <div style="position:relative;flex-shrink:0">
+      ${donutSVG(d.volumeByType)}
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column">
+        <div style="font-size:18px;font-weight:800">${totalVolume}</div>
+        <div style="font-size:10px;color:var(--text-muted)">Total</div>
+      </div>
+    </div>
+    <div style="flex:1">
+      ${d.volumeByType.map(seg=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${seg.color};flex-shrink:0"></div>
+          <span style="font-size:11px;color:var(--text-muted)">${seg.label}</span>
+        </div>
+        <span style="font-size:11px;font-weight:600">${Math.round((seg.value/totalVolume)*100)}%</span>
+      </div>`).join('')}
+    </div>`;
+
+  // Top routes
+  document.getElementById('top-routes').innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">
+    ${d.topRoutes.map(r=>`<div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <span style="font-size:13px;font-weight:500">${r.route}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:11px;color:${r.trend>0?'var(--red)':'var(--green)'}">${r.trend>0?'+':''}${r.trend}%</span>
+          <span style="font-size:12px;font-weight:600">${r.tickets}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${(r.tickets/50)*100}%;background:linear-gradient(90deg,var(--amber),#F59E0B88)"></div></div>
+        <span style="font-size:10px;color:var(--text-muted);width:40px">😊 ${r.satisfaction}%</span>
+      </div>
+    </div>`).join('')}
+  </div>`;
+
+  // AI Metrics
+  const m = d.aiMetrics;
+  document.getElementById('ai-metrics').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      ${[
+        {label:'Auto-handled', value:`${m.handled}%`, color:'#8B5CF6'},
+        {label:'Response Accuracy', value:`${m.accuracy}%`, color:'#10B981'},
+        {label:'Avg Response', value:m.avgResponseTime, color:'#3B82F6'},
+        {label:'Escalation Rate', value:`${m.escalationRate}%`, color:'#F59E0B'},
+      ].map(item=>`<div style="background:var(--surface-high);border-radius:10px;padding:14px;border:1px solid var(--border)">
+        <div style="font-size:20px;font-weight:800;color:${item.color}">${item.value}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">${item.label}</div>
+      </div>`).join('')}
+    </div>
+    <div style="background:var(--surface-high);border-radius:10px;padding:14px;border:1px solid #F59E0B33">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">7-Day Resolution Rate Trend</div>
+      ${sparklineSVG(d.resolutionByDay,'#10B981',220,40)}
+    </div>`;
+}
+
+function setAnalyticsPeriod(p) {
+  analyticsPeriod = p;
+  renderAnalytics();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderDashboard();
+renderAICapabilities();
+renderChatMessages();
+renderStatusFilters();
+filterTickets();
+renderAnalytics();
+</script>
+</body>
+</html>

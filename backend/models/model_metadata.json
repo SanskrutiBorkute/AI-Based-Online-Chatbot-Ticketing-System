@@ -1,0 +1,1 @@
+{"accuracy": 0.7, "total_samples": 97, "classes": ["refund", "payment_failure", "booking_issue", "login_issue", "train_delay", "cancellation", "luggage_issue", "catering_complaint"], "trained_at": "2026-06-17T22:20:07.163415"}

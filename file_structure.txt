@@ -1,0 +1,121 @@
+=========================================================
+              RailAI Project File Structure
+=========================================================
+
+Project Name:
+AI-Based Online Chatbot Ticketing System (RailAI)
+
+Project Root
+│
+├── backend/
+│   │
+│   ├── __pycache__/
+│   │
+│   ├── models/
+│   │   ├── category_model.pkl
+│   │   ├── department_model.pkl
+│   │   ├── priority_model.pkl
+│   │   └── model_metadata.json
+│   │
+│   ├── app.py
+│   ├── chatbot.py
+│   ├── database.py
+│   ├── debug_fetch.py
+│   ├── ml_engine.py
+│   ├── sentiment_engine.py
+│   ├── smoke_test.py
+│   ├── requirements.txt
+│   └── railai.db
+│
+├── frontend/
+│   │
+│   ├── dist/
+│   ├── e2e/
+│   ├── node_modules/
+│   ├── public/
+│   │
+│   ├── src/
+│   │   │
+│   │   ├── assets/
+│   │   │
+│   │   ├── components/
+│   │   │   ├── AnalyticsView.jsx
+│   │   │   ├── ChatView.jsx
+│   │   │   ├── DashboardView.jsx
+│   │   │   ├── Sidebar.jsx
+│   │   │   ├── SvgIcon.jsx
+│   │   │   ├── TicketsView.jsx
+│   │   │   └── Topbar.jsx
+│   │   │
+│   │   ├── api.js
+│   │   ├── App.jsx
+│   │   ├── App.css
+│   │   ├── index.css
+│   │   ├── localization.js
+│   │   └── main.jsx
+│   │
+│   ├── test-results/
+│   ├── .gitignore
+│   ├── eslint.config.js
+│   ├── fetch_frontend.py
+│   ├── index.html
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── playwright.config.js
+│   ├── README.md
+│   └── vite.config.js
+│
+├── RailAI.html
+├── railai.db
+├── README.md
+├── files.txt
+├── notes.txt
+└── gallery.txt
+
+
+=========================================================
+Folder Description
+=========================================================
+
+backend/
+Contains the Flask backend, AI models, database, chatbot logic, machine
+learning modules, sentiment analysis, and REST APIs.
+
+frontend/
+Contains the React + Vite frontend including the user interface, dashboard,
+AI assistant, analytics, ticket management, localization, and API integration.
+
+models/
+Stores all trained machine learning models used for ticket categorization,
+priority prediction, and department prediction.
+
+components/
+Contains reusable React components such as Dashboard, Analytics,
+AI Chat, Sidebar, Tickets, and Topbar.
+
+assets/
+Stores images, icons, and static resources used by the frontend.
+
+public/
+Contains publicly accessible frontend resources.
+
+dist/
+Generated production build after running the Vite build command.
+
+e2e/
+Contains end-to-end testing files.
+
+node_modules/
+Contains all installed npm packages.
+
+README.md
+Project documentation.
+
+files.txt
+Project file structure.
+
+notes.txt
+Complete project setup, execution, deployment, and user guide.
+
+gallery.txt
+Screenshots and project interface descriptions.
